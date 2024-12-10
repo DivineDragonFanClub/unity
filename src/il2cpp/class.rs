@@ -1,5 +1,5 @@
 use std::ffi::CStr;
-
+use std::fmt::{Debug, Formatter, Write};
 use super::{
     api,
     assembly::Il2CppImage,
@@ -21,7 +21,10 @@ pub struct Il2CppClass1 {
     _1_start: [u8; 0x10],
     pub parent: &'static Il2CppClass,
     pub generic_class: Option<&'static Il2CppGenericClass>,
-    _1_end: [u8; 0x30],
+    _1_end: [u8; 0x18],
+    pub fields: *const FieldInfo,
+    pub events: *const u8,
+    pub properties: *const u8,
     pub methods: *const &'static MethodInfo,
     pub nested_types: *const &'static Il2CppClass,
     implemented_interfaces: *const u8,
@@ -60,6 +63,37 @@ pub struct Il2CppClass {
 
 unsafe impl Send for Il2CppClass {}
 unsafe impl Sync for Il2CppClass {}
+
+#[repr(C)]
+pub struct FieldInfo {
+    name: *const u8,
+    ty: &'static Il2CppType,
+    parent: &'static Il2CppClass,
+    offset: i32,
+    token: u32,
+}
+
+impl Debug for FieldInfo {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("{}: {}, //{}", self.get_name().unwrap_or_default(), unsafe { self.ty.data.class_index }, self.offset))
+    }
+}
+
+impl FieldInfo {
+
+    pub fn is_instance(&self) -> bool {
+        // TODO: Actually implement a bitfield
+        (self.ty.bits >> 16) & 0x0010 == 0
+    }
+
+    pub fn get_name(&self) -> Option<String> {
+        if self.name.is_null() {
+            None
+        } else {
+            Some(unsafe { String::from_utf8_lossy(CStr::from_ptr(self.name as _).to_bytes()).to_string() })
+        }
+    }
+}
 
 #[repr(C)]
 pub struct Il2CppRGCTXData {
@@ -164,6 +198,16 @@ impl Il2CppClass {
         self.get_vtable_mut()
             .iter_mut()
             .find(|method| method.get_name().unwrap_or_default() == name.as_ref())
+    }
+
+    /// Returns a slice containing the fields of the class, static and constants included
+    pub fn get_fields(&self) -> &[FieldInfo] {
+        unsafe { std::slice::from_raw_parts(self._1.fields, self._2.field_count as _) }
+    }
+
+    /// Returns a Iterator over the fields that are not static or constants
+    pub fn get_instance_fields(&self) -> impl Iterator<Item = &FieldInfo> {
+        self.get_fields().iter().filter(|field| field.is_instance() && field.offset != 0)
     }
 
     pub fn get_methods(&self) -> &[&'static MethodInfo] {
