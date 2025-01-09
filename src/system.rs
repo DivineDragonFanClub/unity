@@ -100,7 +100,7 @@ pub trait ListVirtual<T>: Il2CppClassData {
 }
 
 #[repr(C)]
-#[unity::class("System.Collections.Generic", "Stack`1")]
+#[crate::class("System.Collections.Generic", "Stack`1")]
 pub struct Stack<T: 'static> {
     pub items: &'static mut Il2CppArray<&'static mut T>,
     pub size: u32,
