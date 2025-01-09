@@ -99,6 +99,56 @@ pub trait ListVirtual<T>: Il2CppClassData {
     }
 }
 
+#[repr(C)]
+#[unity::class("System.Collections.Generic", "Stack`1")]
+pub struct Stack<T: 'static> {
+    pub items: &'static mut Il2CppArray<&'static mut T>,
+    pub size: u32,
+    version: u32,
+    sync_root: *const u8,
+}
+
+impl<T: 'static> Deref for StackFields<T> {
+    type Target = [&'static mut T];
+
+    fn deref(&self) -> &Self::Target {
+        unsafe { std::slice::from_raw_parts(self.items.m_items.as_ptr(), self.size as usize) }
+    }
+}
+
+impl<T: 'static> DerefMut for StackFields<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        unsafe { std::slice::from_raw_parts_mut(self.items.m_items.as_mut_ptr(), self.size as usize) }
+
+    }
+}
+
+impl<T> Stack<T> {
+    pub fn pop(&mut self) -> Option<&'static mut T> {
+        let method = self.get_class()
+            .get_methods()
+            .iter()
+            .find(|method| method.get_name() == Some(String::from("Pop")))
+            .unwrap();
+        
+        let pop = unsafe {
+            std::mem::transmute::<_, extern "C" fn(&mut Self, &MethodInfo) -> Option<&'static mut T>>(
+                method.method_ptr,
+            )
+        };
+
+        pop(self, method)
+    }
+
+    pub fn len(&self) -> usize {
+      self.size as _
+    }
+
+    pub fn capacity(&self) -> usize {
+        self.items.len() as _
+    }
+}
+
 #[crate::class("System.Collections.Generic", "Dictionary`1")]
 pub struct Dictionary<TKey, TValue> {
     lol: PhantomData<(TKey, TValue)>
