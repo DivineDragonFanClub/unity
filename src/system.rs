@@ -69,6 +69,21 @@ impl<T> List<T> {
         add(self, element, method);
     }
 
+    pub fn insert(&mut self, index: i32, element: &'static mut T) {
+        let method = self.get_class()
+            .get_methods()
+            .iter()
+            .find(|method| method.get_name() == Some(String::from("Insert")))
+            .unwrap();
+        
+        let insert = unsafe {
+            std::mem::transmute::<_, extern "C" fn(&mut Self, i32, &'static mut T, &MethodInfo)>(
+                method.method_ptr,
+            )
+        };
+
+        insert(self, index, element, method);
+    }
     pub fn len(&self) -> usize {
         self.size as _
     }
@@ -168,7 +183,30 @@ impl<TKey, TValue> Dictionary<TKey, TValue> {
 
         add(self, key, value, method.method_info);
     }
-
+    pub fn remove(&self, key: TKey) {
+        let method = self.get_class()
+            .get_virtual_method("Remove")
+            .unwrap();
+    
+        let remove = unsafe {
+            std::mem::transmute::<_, extern "C" fn(&Self, TKey, &MethodInfo)>(
+                method.method_info.method_ptr,
+            )
+        };
+        remove(self, key, method.method_info);
+    }
+    pub fn get_count(&self) -> i32 {
+        let method = self.get_class()
+            .get_virtual_method("get_Count")
+            .unwrap();
+    
+        let count = unsafe {
+            std::mem::transmute::<_, extern "C" fn(&Self) -> i32 >(
+                method.method_info.method_ptr,
+            )
+        };
+        count(self)
+    }
     pub fn try_get_value<'a>(&self, key: TKey, value: &'a mut TValue) -> bool {
         let method = self.get_class()
             .get_virtual_method("TryGetValue")
