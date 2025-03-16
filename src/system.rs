@@ -69,7 +69,7 @@ impl<T: crate::il2cpp::class::Il2CppClassData> List<T> {
 
         ctor(list, capacity, method);
 
-        list
+        Ok(list)
     }
     
     pub fn resize(&mut self, length: usize) {
