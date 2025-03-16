@@ -49,7 +49,7 @@ impl<T: 'static> DerefMut for ListFields<T> {
 }
 
 impl<T: crate::il2cpp::class::Il2CppClassData> List<T> {
-    pub fn with_capacity(capacity: i32) -> Result<&'static mut Self, Il2CppError> {
+    pub fn with_capacity(capacity: i32) -> Result<&'static mut Self, crate::Il2CppError> {
         let list_class = crate::il2cpp::class::make_generic(&SystemList::class(), &[T::class()])?;
         //let list_class = crate::get_generic_class!(SystemList<T>).unwrap();
         let list = crate::il2cpp::instantiate_class::<Self>(&list_class)?;
