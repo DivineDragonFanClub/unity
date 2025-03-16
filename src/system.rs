@@ -50,8 +50,8 @@ impl<T: 'static> DerefMut for ListFields<T> {
 
 impl<T> List<T> {
     pub fn with_capacity(capacity: i32) -> &'static mut Self {
-        let list_class = get_generic_class!(SystemList<T>).unwrap();
-        let list = il2cpp::instantiate_class::<Self>(&list_class).unwrap();
+        let list_class = crate::get_generic_class!(SystemList<T>).unwrap();
+        let list = crate::il2cpp::instantiate_class::<Self>(&list_class).unwrap();
 
         // Get constructor that expects a capacity
         let method = list.get_class()
@@ -67,6 +67,8 @@ impl<T> List<T> {
         };
 
         ctor(list, capacity, method);
+
+        list
     }
     
     pub fn resize(&mut self, length: usize) {
