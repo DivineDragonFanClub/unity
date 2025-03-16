@@ -82,7 +82,7 @@ impl<T> List<T> {
         }
     }
 
-    pub fn add(&mut self, element: &'static mut T) {
+    pub fn add(&mut self, element: &'static T) {
         let method = self.get_class()
             .get_methods()
             .iter()
@@ -90,7 +90,7 @@ impl<T> List<T> {
             .unwrap();
         
         let add = unsafe {
-            std::mem::transmute::<_, extern "C" fn(&mut Self, &'static mut T, &MethodInfo)>(
+            std::mem::transmute::<_, extern "C" fn(&mut Self, &'static T, &MethodInfo)>(
                 method.method_ptr,
             )
         };
