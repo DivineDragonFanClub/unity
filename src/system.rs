@@ -16,6 +16,10 @@ pub struct SystemByte { }
 #[crate::from_offset("System", "RuntimeType", "MakeGenericType")]
 pub fn runtime_type_make_generic_type(gt: *const u8, ty: *const u8);
 
+#[repr(C)]
+#[crate::class("System.Collections.Generic", "List`1")]
+pub struct SystemList {}
+
 /// The Il2Cpp equivalent of a C# List, similar to a Rust Vec.
 /// 
 /// Internally backed by a [`Il2CppArray`](crate::il2cpp::object::Il2CppArray), this class keeps track of how many entries are in the array.  
@@ -45,6 +49,26 @@ impl<T: 'static> DerefMut for ListFields<T> {
 }
 
 impl<T> List<T> {
+    pub fn with_capacity(capacity: i32) -> &'static mut Self {
+        let list_class = get_generic_class!(SystemList<T>).unwrap();
+        let list = il2cpp::instantiate_class::<Self>(&list_class).unwrap();
+
+        // Get constructor that expects a capacity
+        let method = list.get_class()
+            .get_methods()
+            .iter()
+            .find(|method| method.get_name() == Some(String::from(".ctor")) && method.parameters_count == 1)
+            .unwrap();
+
+        let ctor = unsafe {
+            std::mem::transmute::<_, extern "C" fn(&Self, i32, &MethodInfo)>(
+                method.method_ptr,
+            )
+        };
+
+        ctor(list, capacity, method);
+    }
+    
     pub fn resize(&mut self, length: usize) {
         if self.items.len() != length {
             let new_array = crate::il2cpp::object::Il2CppArray::new_specific(self.items.get_class(), length as _).unwrap();
