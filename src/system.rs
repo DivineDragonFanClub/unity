@@ -71,7 +71,9 @@ impl<T: crate::il2cpp::class::Il2CppClassData> List<T> {
 
         Ok(list)
     }
-    
+}
+
+impl<T> List<T> {
     pub fn resize(&mut self, length: usize) {
         if self.items.len() != length {
             let new_array = crate::il2cpp::object::Il2CppArray::new_specific(self.items.get_class(), length as _).unwrap();
