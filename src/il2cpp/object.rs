@@ -66,12 +66,15 @@ impl<T: Sized> Il2CppObjectMethods for Il2CppObject<T> {
     }
 }
 
-pub trait Il2CppObjectMethods : Sized {
-    fn get_class(&self) -> &Il2CppClass;
-    fn get_class_mut(&mut self) -> &mut Il2CppClass;
-    fn from_class(class: &Il2CppClass) -> Il2CppResult<&'static mut Self> {
+impl<T> Il2CppObject<T> {
+    pub fn from_class(class: &Il2CppClass) -> Il2CppResult<&'static mut T> {
         unsafe { api::object_new(class) }.ok_or(Il2CppError::FailedInstantiation(class.get_name()))
     }
+}
+
+pub trait Il2CppObjectMethods {
+    fn get_class(&self) -> &Il2CppClass;
+    fn get_class_mut(&mut self) -> &mut Il2CppClass;
 }
 
 #[repr(C)]
