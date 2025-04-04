@@ -5,6 +5,7 @@ pub use crate::
             Il2CppClass,
             Il2CppClassData
         },
+        object::Il2CppObjectMethods,
         method::MethodInfo
     }
 ;

@@ -65,12 +65,12 @@ pub fn class(attrs: TokenStream, item: TokenStream) -> TokenStream {
         // TODO: Make sure the type provided implements Il2CppClassData or something
         #static_method
 
-        impl #impl_generics #name #type_generics #where_clause {
-            pub fn get_class(&self) -> &#ctx::Il2CppClass {
+        impl #impl_generics #ctx::Il2CppObjectMethods for #name #type_generics #where_clause {
+            fn get_class(&self) -> &#ctx::Il2CppClass {
                 &self.klass
             }
 
-            pub fn get_class_mut(&mut self) -> &mut #ctx::Il2CppClass {
+            fn get_class_mut(&mut self) -> &mut #ctx::Il2CppClass {
                 &mut self.klass
             }
         }

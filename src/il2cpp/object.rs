@@ -57,17 +57,19 @@ impl<T> AsMut<T> for Il2CppObject<T> {
     }
 }
 
-impl<T> Il2CppObject<T> {
-    pub fn get_class(&self) -> &Il2CppClass {
+impl<T: Sized> Il2CppObjectMethods for Il2CppObject<T> {
+    fn get_class(&self) -> &Il2CppClass {
         self.klass
     }
-
-    pub fn get_class_mut(&mut self) -> &mut Il2CppClass {
+    fn get_class_mut(&mut self) -> &mut Il2CppClass {
         self.klass
     }
+}
 
-    /// Create a unique [`Il2CppObject`] instance of the [`Il2CppClass`](crate::il2cpp::class::Il2CppClass) provided.
-    pub fn from_class(class: &Il2CppClass) -> Il2CppResult<&'static mut T> {
+pub trait Il2CppObjectMethods : Sized {
+    fn get_class(&self) -> &Il2CppClass;
+    fn get_class_mut(&mut self) -> &mut Il2CppClass;
+    fn from_class(class: &Il2CppClass) -> Il2CppResult<&'static mut Self> {
         unsafe { api::object_new(class) }.ok_or(Il2CppError::FailedInstantiation(class.get_name()))
     }
 }

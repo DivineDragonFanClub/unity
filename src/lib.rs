@@ -53,7 +53,7 @@ pub mod prelude {
         il2cpp::{
             class::{Il2CppClass, Il2CppClassData},
             method::{MethodInfo, OptionalMethod},
-            object::{Il2CppArray, Il2CppObject, ArrayInstantiator},
+            object::{Il2CppArray, Il2CppObject, Il2CppObjectMethods, ArrayInstantiator},
         },
         system::Il2CppString,
     };
