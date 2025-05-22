@@ -173,7 +173,7 @@ impl ArrayInstantiator<u8> for Array<u8> {
     }
 }
 
-impl<T: Il2CppClassData> ArrayInstantiator<&'static mut T> for Array<&'static mut T> {
+impl<'a, T: Il2CppClassData> ArrayInstantiator<&'a mut T> for Array<&'a mut T> {
     /// Create an empty Il2CppArray capable of holding the provided amount of entries.
     /// 
     /// Arguments:
@@ -205,7 +205,7 @@ impl<T: Il2CppClassData> ArrayInstantiator<&'static mut T> for Array<&'static mu
     /// ```
     /// 
     /// Note that this method takes ownership of the slice, so you won't be able to use it afterwards.
-    fn from_slice(mut slice: impl AsMut<[&'static mut T]>) -> Il2CppResult<&'static mut Self> {
+    fn from_slice(mut slice: impl AsMut<[&'a mut T]>) -> Il2CppResult<&'static mut Self> {
         let new_array = array_new(T::class(), slice.as_mut().len())?;
         new_array.swap_with_slice(slice.as_mut());
         Ok(new_array)
