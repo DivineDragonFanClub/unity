@@ -15,8 +15,8 @@ pub struct Color {
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct Vector2<T> {
-    x: T,
-    y: T,
+    pub x: T,
+    pub y: T,
 }
 
 impl<T> Vector2<T> {
@@ -28,9 +28,9 @@ impl<T> Vector2<T> {
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct Vector3<T> {
-    x: T,
-    y: T,
-    z: T,
+    pub x: T,
+    pub y: T,
+    pub z: T,
 }
 
 impl<T> Vector3<T> {

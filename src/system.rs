@@ -16,6 +16,10 @@ pub struct SystemByte { }
 #[crate::from_offset("System", "RuntimeType", "MakeGenericType")]
 pub fn runtime_type_make_generic_type(gt: *const u8, ty: *const u8);
 
+#[repr(C)]
+#[crate::class("System.Collections.Generic", "List`1")]
+pub struct SystemList {}
+
 /// The Il2Cpp equivalent of a C# List, similar to a Rust Vec.
 /// 
 /// Internally backed by a [`Il2CppArray`](crate::il2cpp::object::Il2CppArray), this class keeps track of how many entries are in the array.  
@@ -44,6 +48,31 @@ impl<T: 'static> DerefMut for ListFields<T> {
     }
 }
 
+impl<T: crate::il2cpp::class::Il2CppClassData> List<T> {
+    pub fn with_capacity(capacity: i32) -> Result<&'static mut Self, crate::Il2CppError> {
+        let list_class = crate::il2cpp::class::make_generic(&SystemList::class(), &[T::class()])?;
+        //let list_class = crate::get_generic_class!(SystemList<T>).unwrap();
+        let list = crate::il2cpp::instantiate_class::<Self>(&list_class)?;
+
+        // Get constructor that expects a capacity
+        let method = list.get_class()
+            .get_methods()
+            .iter()
+            .find(|method| method.get_name() == Some(String::from(".ctor")) && method.parameters_count == 1)
+            .unwrap();
+
+        let ctor = unsafe {
+            std::mem::transmute::<_, extern "C" fn(&Self, i32, &MethodInfo)>(
+                method.method_ptr,
+            )
+        };
+
+        ctor(list, capacity, method);
+
+        Ok(list)
+    }
+}
+
 impl<T> List<T> {
     pub fn resize(&mut self, length: usize) {
         if self.items.len() != length {
@@ -53,7 +82,7 @@ impl<T> List<T> {
         }
     }
 
-    pub fn add(&mut self, element: &'static mut T) {
+    pub fn add(&mut self, element: &'static T) {
         let method = self.get_class()
             .get_methods()
             .iter()
@@ -61,7 +90,7 @@ impl<T> List<T> {
             .unwrap();
         
         let add = unsafe {
-            std::mem::transmute::<_, extern "C" fn(&mut Self, &'static mut T, &MethodInfo)>(
+            std::mem::transmute::<_, extern "C" fn(&mut Self, &'static T, &MethodInfo)>(
                 method.method_ptr,
             )
         };
