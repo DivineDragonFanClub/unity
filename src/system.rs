@@ -194,16 +194,24 @@ impl<T> Stack<T> {
 }
 
 #[crate::class("System.Collections.Generic", "Dictionary`1")]
-pub struct Dictionary<TKey, TValue> {
-    lol: PhantomData<(TKey, TValue)>
+pub struct Dictionary<'a, TKey, TValue> {
+    array: &'a mut Il2CppArray<i32>,
+    pub entries: &'a Il2CppArray<DictionaryEntry<TKey, TValue>>,
+}
+#[repr(C)]
+pub struct DictionaryEntry<TKey, TValue> {
+    hash: i32,
+    next: i32,
+    pub key: Option<TKey>,
+    pub value: TValue,
 }
 
-impl<TKey, TValue> Dictionary<TKey, TValue> {
+impl<'a, TKey, TValue> Dictionary<'a, TKey, TValue> {
     pub fn add(&self, key: TKey, value: TValue) {
         let method = self.get_class()
             .get_virtual_method("Add")
             .unwrap();
-        
+
         let add = unsafe {
             std::mem::transmute::<_, extern "C" fn(&Self, TKey, TValue, &MethodInfo)>(
                 method.method_info.method_ptr,
@@ -216,7 +224,7 @@ impl<TKey, TValue> Dictionary<TKey, TValue> {
         let method = self.get_class()
             .get_virtual_method("Remove")
             .unwrap();
-    
+
         let remove = unsafe {
             std::mem::transmute::<_, extern "C" fn(&Self, TKey, &MethodInfo)>(
                 method.method_info.method_ptr,
@@ -228,21 +236,21 @@ impl<TKey, TValue> Dictionary<TKey, TValue> {
         let method = self.get_class()
             .get_virtual_method("get_Count")
             .unwrap();
-    
+
         let count = unsafe {
-            std::mem::transmute::<_, extern "C" fn(&Self) -> i32 >(
+            std::mem::transmute::<_, extern "C" fn(&Self) -> i32>(
                 method.method_info.method_ptr,
             )
         };
         count(self)
     }
-    pub fn try_get_value<'a>(&self, key: TKey, value: &'a mut TValue) -> bool {
+    pub fn try_get_value(&self, key: TKey, value: &'a mut TValue) -> bool {
         let method = self.get_class()
             .get_virtual_method("TryGetValue")
             .unwrap();
-        
+
         let try_get_value = unsafe {
-            std::mem::transmute::<_, extern "C" fn(&Self, TKey, &mut TValue, &MethodInfo) -> bool>(
+            std::mem::transmute::<_, extern "C" fn(&Self, TKey, &'a mut TValue, &MethodInfo) -> bool>(
                 method.method_info.method_ptr,
             )
         };
