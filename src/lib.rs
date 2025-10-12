@@ -1,4 +1,4 @@
-#![feature(lazy_cell, ptr_sub_ptr)]
+#![feature(ptr_sub_ptr)]
 
 pub use unity_macro::*;
 

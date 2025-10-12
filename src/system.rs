@@ -1,5 +1,5 @@
 use crate::prelude::{Il2CppArray, Il2CppClassData, MethodInfo};
-use std::{marker::PhantomData, ops::{Deref, DerefMut}};
+use std::{ops::{Deref, DerefMut}};
 
 pub mod string;
 pub use string::Il2CppString;
