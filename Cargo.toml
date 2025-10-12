@@ -6,8 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-skyline = { git = "https://github.com/Raytwo/skyline-rs", branch = "preview" }
+skyline = "0.5.1"
 unity-macro = { path = "./unity-macro" }
 memoffset = { version = "0.8.0" }
 thiserror = { version = "1" }
 lazysimd = { git = "https://github.com/Raytwo/lazysimd" }
+
