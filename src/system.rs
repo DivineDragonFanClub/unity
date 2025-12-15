@@ -220,17 +220,18 @@ impl<'a, TKey, TValue> Dictionary<'a, TKey, TValue> {
 
         add(self, key, value, method.method_info);
     }
-    pub fn remove(&self, key: TKey) {
+    pub fn remove(&self, key: TKey) -> bool {
         let method = self.get_class()
             .get_virtual_method("Remove")
             .unwrap();
 
         let remove = unsafe {
-            std::mem::transmute::<_, extern "C" fn(&Self, TKey, &MethodInfo)>(
+            std::mem::transmute::<_, extern "C" fn(&Self, TKey, &MethodInfo) -> bool>(
                 method.method_info.method_ptr,
             )
         };
-        remove(self, key, method.method_info);
+        
+        remove(self, key, method.method_info)
     }
     pub fn get_count(&self) -> i32 {
         let method = self.get_class()
