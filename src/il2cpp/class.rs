@@ -69,7 +69,7 @@ pub struct FieldInfo {
     name: *const u8,
     ty: &'static Il2CppType,
     parent: &'static Il2CppClass,
-    offset: i32,
+    pub offset: i32,
     token: u32,
 }
 
