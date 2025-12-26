@@ -70,3 +70,8 @@ pub(crate) fn class_from_il2cpptype(ty: &Il2CppType) -> Option<&'static mut Il2C
     "fd 7b bd a9 f5 0b 00 f9 fd 03 00 91 f4 4f 02 a9 08 c8 44 39 08 03 10 37 ?? ?? ?? ?? ?? ?? ?? ?? f3 03 00 aa b5 0f 00 f9"
 )]
 pub(crate) fn class_init(class: &Il2CppClass);
+
+#[lazysimd::from_pattern(
+    "fd 7b bc a9 f7 0b 00 f9 fd 03 00 91 f6 57 02 a9 f4 4f 03 a9 08 08 40 b9 f4 03 02 aa f3 03 01 aa e8 0b f0 37 f5 03 03 2a f6 03 00 aa"
+)]
+pub(crate) fn field_set_value_raw(ty: &Il2CppType, dest: *const u8, value: *const u8, deref_pointer: bool);
