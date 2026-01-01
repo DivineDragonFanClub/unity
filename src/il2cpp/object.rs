@@ -283,10 +283,10 @@ impl<T> Array<T> {
     }
 }
 
-fn array_new_specific<T>(array_typeinfo: &Il2CppClass, length: usize) -> Il2CppResult<&'static mut Il2CppArray<T>> {
+pub fn array_new_specific<T>(array_typeinfo: &Il2CppClass, length: usize) -> Il2CppResult<&'static mut Il2CppArray<T>> {
     unsafe { api::array_new_specific(array_typeinfo, length) }.ok_or(Il2CppError::FailedArrayInstantiation)
 }
 
-fn array_new<T>(element_typeinfo: &Il2CppClass, length: usize) -> Il2CppResult<&'static mut Il2CppArray<T>> {
+pub fn array_new<T>(element_typeinfo: &Il2CppClass, length: usize) -> Il2CppResult<&'static mut Il2CppArray<T>> {
     unsafe { api::array_new(element_typeinfo, length) }.ok_or(Il2CppError::FailedArrayInstantiation)
 }
