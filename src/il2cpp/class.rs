@@ -229,6 +229,10 @@ impl Il2CppClass {
         self.get_fields().iter().filter(|field| field.is_instance() && field.offset != 0)
     }
 
+    pub fn get_properties(&self) -> &[PropertyInfo] {
+        unsafe { std::slice::from_raw_parts(self._1.properties, self._2.property_count as _) }
+    }
+
     pub fn get_methods(&self) -> &[&'static MethodInfo] {
         unsafe { std::slice::from_raw_parts(self._1.methods, self._2.method_count as _) }
     }
