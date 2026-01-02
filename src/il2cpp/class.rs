@@ -24,7 +24,7 @@ pub struct Il2CppClass1 {
     _1_end: [u8; 0x18],
     pub fields: *const FieldInfo,
     pub events: *const u8,
-    pub properties: *const u8,
+    pub properties: *const PropertyInfo,
     pub methods: *const &'static MethodInfo,
     pub nested_types: *const &'static Il2CppClass,
     implemented_interfaces: *const u8,
@@ -80,12 +80,31 @@ impl Debug for FieldInfo {
 }
 
 impl FieldInfo {
-
     pub fn is_instance(&self) -> bool {
         // TODO: Actually implement a bitfield
         (self.ty.bits >> 16) & 0x0010 == 0
     }
 
+    pub fn get_name(&self) -> Option<String> {
+        if self.name.is_null() {
+            None
+        } else {
+            Some(unsafe { String::from_utf8_lossy(CStr::from_ptr(self.name as _).to_bytes()).to_string() })
+        }
+    }
+}
+
+#[repr(C)]
+pub struct PropertyInfo {
+    pub class: &'static Il2CppClass,
+    pub name: *const u8,
+    pub get: &'static MethodInfo,
+    pub set: &'static MethodInfo,
+    pub attrs: i32,
+    pub token: u32,
+}
+
+impl PropertyInfo {
     pub fn get_name(&self) -> Option<String> {
         if self.name.is_null() {
             None
