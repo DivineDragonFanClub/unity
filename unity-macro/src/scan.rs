@@ -102,7 +102,7 @@ pub fn from_offset(attr: TokenStream, item: TokenStream) -> TokenStream {
     let scan_module = scan_info.get_scan_fn(get_fn_arg_count(&function.sig.inputs));
 
     quote!(
-        #[skyline::from_offset(#scan_fn_name::get_offset() as isize)]
+        #[skyline::from_offset(#scan_fn_name::get_offset() as usize)]
         #function
         #[doc(hidden)]
         pub mod #scan_fn_name {
