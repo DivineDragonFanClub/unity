@@ -43,7 +43,7 @@ impl ScanInfo {
                 static OFFSETS: #ctx::LazyLock<usize> = #ctx::LazyLock::new(|| {
                     let method = &INFO;
                     let text = #ctx::scan::get_text();
-                    unsafe { method.method_ptr.offset_from(text.as_ptr() as usize)}
+                    unsafe { method.method_ptr.offset_from(text.as_ptr()) as usize}
                 });
                 *OFFSETS
             }
