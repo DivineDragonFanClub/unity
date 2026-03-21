@@ -14,8 +14,8 @@ pub type Il2CppString = Il2CppObject<SystemString>;
 #[repr(C)]
 #[derive(Clone)]
 pub struct SystemString {
-    len: i32,
-    string: [u16; 0],
+    pub len: i32,
+    pub string: [u16; 0],
 }
 
 impl Il2CppClassData for Il2CppString {
