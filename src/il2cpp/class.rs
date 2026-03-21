@@ -144,7 +144,10 @@ impl Il2CppClass {
     pub fn from_name(namespace: impl AsRef<str>, name: impl AsRef<str>) -> Il2CppResult<&'static mut Self> {
         get_class_from_name(namespace, name)
     }
-
+    pub fn get_system_type(&self) -> &'static SystemType { 
+        unsafe { reflection_get_type_object(self.get_type()) }
+    }
+    
     pub fn from_il2cpptype(ty: &Il2CppType) -> Il2CppResult<&'static mut Self> {
         class_from_il2cpptype(ty)
     }
