@@ -33,7 +33,9 @@ pub struct Il2CppClass1 {
 
 #[repr(C)]
 pub struct Il2CppClass2 {
-    _2_start: [u8; 0x30],
+    pub type_hierarchy: *const &'static Il2CppClass,
+    _2_start: [u8; 0x20],
+    pub generic_handle: Option<&'static Il2CppGenericContainer>,
     pub instance_size: u32,
     pub actual_size: u32,
     __: [u8; 0x18],
