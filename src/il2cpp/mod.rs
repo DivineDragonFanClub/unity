@@ -14,6 +14,7 @@ use method::*;
 
 use crate::{Il2CppResult, Il2CppError};
 mod ffi;
+pub mod generic;
 
 pub fn method_from_name(name: impl AsRef<str>) -> *const u8 {
     let name = std::ffi::CString::new(name.as_ref()).unwrap();
