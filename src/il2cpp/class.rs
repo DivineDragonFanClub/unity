@@ -403,6 +403,16 @@ impl Il2CppClassData for u8 {
         Self::class().clone()
     }
 }
+make_class_data!(u8, "System", "Byte");
+make_class_data!(i8, "System", "SByte");
+make_class_data!(i16, "System", "Int16");
+make_class_data!(u16, "System", "UInt16");
+make_class_data!(i32, "System", "Int32");
+make_class_data!(u32, "System", "UInt32");
+make_class_data!(i64, "System", "Int64");
+make_class_data!(u64, "System", "UInt64");
+make_class_data!(f32, "System", "Single");
+make_class_data!(f64, "System", "Double");
 
 /// input: `SomeClass<Arg1, Arg2, ...>`
 #[macro_export]
