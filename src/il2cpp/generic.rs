@@ -59,7 +59,7 @@ pub fn create_generic_method_info(method_info: &MethodInfo, types: &[&Il2CppType
 #[macro_export]
 macro_rules! get_generic_method {
     ($method:ident<$($ty:ident),+>) => {
-        unity::il2cpp::method::create_generic_method_info($method, &[$($ty::class().get_type()),+])
+        unity::il2cpp::generic::create_generic_method_info($method, &[$($ty::class().get_type()),+])
     };
 }
 
