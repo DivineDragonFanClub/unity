@@ -8,6 +8,7 @@ use super::{
     Il2CppType,
 };
 use crate::{Il2CppResult, Il2CppError, system::{SystemType, runtime_type_make_generic_type}};
+use crate::il2cpp::generic::{Il2CppGenericContainer, Il2CppGenericContext};
 
 #[repr(C)]
 pub struct Il2CppClass1 {
@@ -33,7 +34,9 @@ pub struct Il2CppClass1 {
 
 #[repr(C)]
 pub struct Il2CppClass2 {
-    _2_start: [u8; 0x30],
+    pub type_hierarchy: *const &'static Il2CppClass,
+    _2_start: [u8; 0x20],
+    pub generic_handle: Option<&'static Il2CppGenericContainer>,
     pub instance_size: u32,
     pub actual_size: u32,
     __: [u8; 0x18],
@@ -128,9 +131,9 @@ pub struct Il2CppRGCTXData {
 
 #[repr(C)]
 pub struct Il2CppGenericClass {
-    type_definition_idx: i32,
-    class_inst: *const u8,
-    method_inst: *const u8,
+    // type_definition_idx: i32,
+    pub ty: &'static Il2CppType,    // Union of Il2CppType / TypeDefinitionIndex
+    pub context: Il2CppGenericContext,
     pub cached_class: *const Il2CppClass,
 }
 
@@ -143,6 +146,9 @@ fn gc_malloc_kind<T>(size: usize, kind: u32) -> &'static mut T;
 impl Il2CppClass {
     pub fn from_name(namespace: impl AsRef<str>, name: impl AsRef<str>) -> Il2CppResult<&'static mut Self> {
         get_class_from_name(namespace, name)
+    }
+    pub fn get_system_type(&self) -> &'static SystemType {
+        unsafe { reflection_get_type_object(self.get_type()) }
     }
 
     pub fn from_il2cpptype(ty: &Il2CppType) -> Il2CppResult<&'static mut Self> {
@@ -249,6 +255,21 @@ impl Il2CppClass {
         let name = std::ffi::CString::new(name.as_ref()).unwrap();
 
         unsafe { api::get_method_from_name_flags(self, name.as_ptr() as _, args_count, flag) }.ok_or(Il2CppError::MissingMethod)
+    }
+    pub fn get_class_hierarchy(&self) -> &[&'static Il2CppClass] {
+        unsafe { std::slice::from_raw_parts(self._2.type_hierarchy, (self._2.type_hierarchy_depth) as _ ) }
+    }
+
+    pub fn find_class_in_hierarchy(&self, class: &Il2CppClass) -> Option<&'static Il2CppClass>{
+        self.find_class_in_hierarchy_by_name(class.get_namespace().as_str(), class.get_name().as_str())
+    }
+    pub fn find_class_in_hierarchy_by_name(&self, namespace: impl AsRef<str>, name: impl AsRef<str>) -> Option<&'static Il2CppClass> {
+        self.get_class_hierarchy().iter()
+            .find(|klass| klass.get_name() == name.as_ref() && klass.get_namespace() == namespace.as_ref())
+            .map(|v| *v)
+    }
+    pub fn instantiate_as<T: 'static>(&self) -> Il2CppResult<&'static mut T> {
+        super::instantiate_class(self)
     }
 }
 
@@ -370,24 +391,33 @@ pub trait Il2CppClassData {
         super::instantiate_class(Self::class())
     }
 }
+macro_rules! make_class_data {
+    ($name:ty, $namespace:expr, $class:expr) => {
+        impl Il2CppClassData for $name {
+            const NAMESPACE: &'static str = $namespace ;
+            const CLASS: &'static str = $class ;
 
-impl Il2CppClassData for u8 {
-    const NAMESPACE: &'static str = "System";
-    const CLASS: &'static str = "Byte";
-
-    fn class() -> &'static Il2CppClass {
-        static CLASS_TYPE: std::sync::LazyLock<&'static mut Il2CppClass> = std::sync::LazyLock::new(|| {
-            Il2CppClass::from_name("System", "Byte")
-                .expect(&format!("Failed to find class {}.{}", "System", "Byte"))
-        });
-
-        &CLASS_TYPE
-    }
-
-    fn class_mut() -> &'static mut Il2CppClass {
-        Self::class().clone()
+            fn class() -> &'static Il2CppClass {
+                static CLASS_TYPE: std::sync::LazyLock<&'static mut Il2CppClass> = std::sync::LazyLock::new(|| {
+                    Il2CppClass::from_name($namespace, $class)
+                    .expect(&format!("Failed to find class {}.{}", $namespace, $class))
+                });
+                &CLASS_TYPE
+            }
+            fn class_mut() -> &'static mut Il2CppClass { Self::class().clone()}
+        }
     }
 }
+make_class_data!(u8, "System", "Byte");
+make_class_data!(i8, "System", "SByte");
+make_class_data!(i16, "System", "Int16");
+make_class_data!(u16, "System", "UInt16");
+make_class_data!(i32, "System", "Int32");
+make_class_data!(u32, "System", "UInt32");
+make_class_data!(i64, "System", "Int64");
+make_class_data!(u64, "System", "UInt64");
+make_class_data!(f32, "System", "Single");
+make_class_data!(f64, "System", "Double");
 
 /// input: `SomeClass<Arg1, Arg2, ...>`
 #[macro_export]
@@ -402,3 +432,6 @@ macro_rules! get_generic_class {
 
 #[skyline::from_offset(0x4503c0)]
 pub fn setup_gc_descriptor(class: &Il2CppClass);
+
+#[skyline::from_offset(0x444dc8)]
+fn reflection_get_type_object(ty: &Il2CppType) -> &'static SystemType;

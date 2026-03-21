@@ -11,7 +11,8 @@ struct ClassData(String, String);
 #[derive(Default, Debug)]
 struct ClassAttributes {
     static_type: Option<Type>,
-    interfaces: Vec<TypePath>
+    interfaces: Vec<TypePath>,
+    nested_type: Option<Type>,
 }
 
 pub fn class(attrs: TokenStream, item: TokenStream) -> TokenStream {
@@ -22,7 +23,7 @@ pub fn class(attrs: TokenStream, item: TokenStream) -> TokenStream {
         Err(err) => return err.to_compile_error().into(),
     };
 
-    let ClassAttributes { static_type, interfaces } = process_attrs(&mut input.attrs).unwrap();
+    let ClassAttributes { static_type, interfaces, nested_type } = process_attrs(&mut input.attrs).unwrap();
     
     let vis = &input.vis;
     let name = &input.ident;
@@ -47,7 +48,25 @@ pub fn class(attrs: TokenStream, item: TokenStream) -> TokenStream {
 
 
     let ctx = super::utils::context();
-    
+    // Getting Il2CppClass if `nested_from_type` was specified
+    let class_impl =
+        if let Some(nested_type) = nested_type {
+            quote! {
+                static CLASS_TYPE: #ctx::LazyLock<&'static #ctx::Il2CppClass> = #ctx::LazyLock::new(||{
+                    #nested_type::class().get_nested_types().iter().find(|klass| klass.get_name() == #class)
+                        .expect(&format!("Failed to find nested class {} from {}", #class, #nested_type::class().get_name()))
+                });
+            }
+        }
+        else {
+            quote!{
+                static CLASS_TYPE: #ctx::LazyLock<&'static mut #ctx::Il2CppClass> = #ctx::LazyLock::new(|| {
+                    #ctx::Il2CppClass::from_name(#namespace, #class)
+                        .expect(&format!("Failed to find class {}.{}", #namespace, #class))
+                });
+            }
+        };
+
     quote! {
         /// New Il2CppObject structure using the name from the struct item
         #[repr(C)]
@@ -113,11 +132,7 @@ pub fn class(attrs: TokenStream, item: TokenStream) -> TokenStream {
             const CLASS: &'static str = #class;
 
             fn class() -> &'static #ctx::Il2CppClass {
-                static CLASS_TYPE: #ctx::LazyLock<&'static mut #ctx::Il2CppClass> = #ctx::LazyLock::new(|| {
-                    #ctx::Il2CppClass::from_name(#namespace, #class)
-                        .expect(&format!("Failed to find class {}.{}", #namespace, #class))
-                });
-
+                #class_impl
                 &CLASS_TYPE
             }
 
@@ -159,6 +174,9 @@ fn process_attrs(attrs: &mut [Attribute]) -> Result<ClassAttributes> {
                         attributes.interfaces.push(attr);
                     }
                 },
+                "nested_from_type" => {
+                    attributes.nested_type = Some(attribute.parse_args()?);
+                }
                 _ => (),
             }
         }

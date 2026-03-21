@@ -49,3 +49,10 @@ mod il2cpp;
 pub fn class(attr: TokenStream, item: TokenStream) -> TokenStream {
     il2cpp::class(attr, item)
 }
+
+mod method;
+
+#[proc_macro_attribute]
+pub fn class_method(attr: TokenStream, item: TokenStream) -> TokenStream {
+    method::class_method(attr, item)
+}

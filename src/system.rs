@@ -2,6 +2,8 @@ use crate::prelude::{Il2CppArray, Il2CppClassData, MethodInfo};
 use std::{ops::{Deref, DerefMut}};
 
 pub mod string;
+pub mod action;
+
 pub use string::Il2CppString;
 
 #[repr(C)]

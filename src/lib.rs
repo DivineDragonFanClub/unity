@@ -47,6 +47,7 @@ pub mod prelude {
 
     pub use crate::{
         get_generic_class,
+        get_generic_method,
         il2cpp,
         Il2CppResult,
         Il2CppError,
