@@ -145,6 +145,6 @@ impl SystemDelegate for Action {}
 impl<A> SystemDelegate for Action1<A> {}
 impl<T,R> SystemDelegate for Func<T,R> {}
 
-#[crate::from_offset("System", "Action", ".ctor")]
+#[skyline::from_offset(0x33f4290)]
 fn system_action_ctor<D, T>(this: &D, obj: Option<&T>, method_info: &MethodInfo)
 where D: SystemDelegate;
