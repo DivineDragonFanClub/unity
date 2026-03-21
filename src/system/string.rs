@@ -95,7 +95,7 @@ impl Il2CppString {
         if self.len == 0 {
             String::new()
         } else {
-            unsafe { String::from_utf16(std::slice::from_raw_parts(self.string.as_ptr(), self.len as _)).unwrap_or_default() }
+            unsafe { String::from_utf16_lossy(std::slice::from_raw_parts(self.string.as_ptr(), self.len as _)) }
         }
     }
 
