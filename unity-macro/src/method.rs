@@ -55,7 +55,7 @@ impl Parse for ClassMethodAttrs {
 /// `vtable`: looks for the method in the class's vtable instead of the method table.
 ///
 pub fn class_method(attr: TokenStream, input: TokenStream) -> TokenStream {
-    let mut fn_sig = parse_macro_input!(input as syn::ForeignItemFn);
+    let fn_sig = parse_macro_input!(input as syn::ForeignItemFn);
     let ClassMethodAttrs(index, is_generic, vtable, method_class) = parse_macro_input!(attr as ClassMethodAttrs);
     let mut inner_fn_type: syn::TypeBareFn = parse_quote!( fn() );
     inner_fn_type.output = fn_sig.sig.output.clone();

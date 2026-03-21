@@ -256,11 +256,16 @@ impl Il2CppClass {
 
         unsafe { api::get_method_from_name_flags(self, name.as_ptr() as _, args_count, flag) }.ok_or(Il2CppError::MissingMethod)
     }
-    pub fn get_class_in_hierarchy(&self, class: &Il2CppClass) -> Option<&'static Il2CppClass>{
-        self.get_class_in_hierarchy_by_name(class.get_namespace().as_str(), class.get_name().as_str())
+    pub fn get_class_hierarchy(&self) -> &[&'static Il2CppClass] {
+        unsafe { std::slice::from_raw_parts(self._2.type_hierarchy, (self._2.type_hierarchy_depth) as _ ) }
     }
-    pub fn get_class_in_hierarchy_by_name(&self, namespace: impl AsRef<str>, name: impl AsRef<str>) -> Option<&'static Il2CppClass> {
-        self.get_type_hierarchy().iter().rev().find(|klass| klass.get_name() == name.as_ref() && klass.get_namespace() == namespace.as_ref())
+
+    pub fn find_class_in_hierarchy(&self, class: &Il2CppClass) -> Option<&'static Il2CppClass>{
+        self.find_class_in_hierarchy_by_name(class.get_namespace().as_str(), class.get_name().as_str())
+    }
+    pub fn find_class_in_hierarchy_by_name(&self, namespace: impl AsRef<str>, name: impl AsRef<str>) -> Option<&'static Il2CppClass> {
+        self.get_class_hierarchy().iter()
+            .find(|klass| klass.get_name() == name.as_ref() && klass.get_namespace() == namespace.as_ref())
             .map(|v| *v)
     }
     pub fn instantiate_as<T: 'static>(&self) -> Il2CppResult<&'static mut T> {

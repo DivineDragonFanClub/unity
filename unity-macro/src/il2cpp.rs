@@ -66,7 +66,7 @@ pub fn class(attrs: TokenStream, item: TokenStream) -> TokenStream {
                 });
             }
         };
-    
+
     quote! {
         /// New Il2CppObject structure using the name from the struct item
         #[repr(C)]
@@ -133,6 +133,7 @@ pub fn class(attrs: TokenStream, item: TokenStream) -> TokenStream {
 
             fn class() -> &'static #ctx::Il2CppClass {
                 #class_impl
+                &CLASS_TYPE
             }
 
             fn class_mut() -> &'static mut #ctx::Il2CppClass {

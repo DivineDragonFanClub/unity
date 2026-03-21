@@ -29,7 +29,7 @@ pub struct Action{
 }
 
 impl Action{
-    pub fn new<T>(target: Option<&T>, method: fn(&T, OptionalMethod)) -> &'static mut Self {
+    pub fn new<T: Il2CppClassData>(target: Option<&T>, method: fn(&T, OptionalMethod)) -> &'static mut Self {
         let mut method_info = MethodInfo::new();
         method_info.method_ptr = method as _;
         method_info.parameters_count = 0;
@@ -134,8 +134,8 @@ pub struct Func1<T: 'static, A, R>{
 }
 
 /// Trait to use the .ctor for all delegate classes
-pub trait SystemDelegate {
-    fn ctor<T: Il2CppClassData + Sized>(&self, object: Option<&T>, method_info: &MethodInfo) {
+pub trait SystemDelegate: Il2CppClassData + Sized {
+    fn ctor<T>(&self, object: Option<&T>, method_info: &MethodInfo) {
         unsafe { system_action_ctor(self, object, method_info); }
     }
 }
@@ -147,6 +147,4 @@ impl<T,R> SystemDelegate for Func<T,R> {}
 
 #[crate::from_offset("System", "Action", ".ctor")]
 fn system_action_ctor<D, T>(this: &D, obj: Option<&T>, method_info: &MethodInfo)
-where
-    D: SystemDelegate,
-    T: Il2CppClassData + Sized;
+where D: SystemDelegate;
