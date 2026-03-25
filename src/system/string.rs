@@ -1,5 +1,8 @@
 use std::{fmt::{Display, Formatter}, str::FromStr};
 
+#[cfg(target_arch = "aarch64")]
+use core::arch::aarch64::*;
+
 use crate::prelude::{Il2CppClass, Il2CppClassData, Il2CppObject, OptionalMethod};
 
 /// A type alias for `Il2CppObject<SystemString>`.
@@ -62,6 +65,9 @@ fn system_string_equals(a: &Il2CppString, b: &Il2CppString, method_info: Optiona
 #[crate::from_offset("System", "String", "GetHashCode")]
 fn system_string_get_hash_code(this: &Il2CppString, method_info: OptionalMethod) -> i32;
 
+#[skyline::from_offset(0x44a168)]
+fn string_new_size(length: i32, method_info: OptionalMethod) -> Option<&'static mut Il2CppString>;
+
 impl Il2CppString {
     /// Create a new instance of a SystemString using the provided value.
     /// 
@@ -71,10 +77,17 @@ impl Il2CppString {
     ///
     /// ```
     /// let string = Il2CppString::new("A new string");
-    /// ```j
+    /// ```
     pub fn new<'a>(string: impl AsRef<str>) -> &'a Il2CppString {
-        let cock = std::ffi::CString::new(string.as_ref()).unwrap();
-        unsafe { string_new(cock.as_bytes_with_nul().as_ptr()) }
+        let string_ref = string.as_ref();
+        // Use neon instructions to make the conversion faster
+        let mut neon = u8_to_u16_neon(string_ref.as_bytes());
+        neon.push(0); // Add a null terminator
+        // Allocate a new *empty* string on the Il2Cpp side so we don't have to deal with pointers and who owns them and their lifetime
+        let empty_il2cppstring = unsafe { string_new_size((neon.len() - 1) as _ , None) }.unwrap();
+        // Copy the content of the UTF16 vec to the Il2CppString's destination. Double len because this is in bytes amount and not character amount.
+        unsafe { skyline::libc::memcpy(empty_il2cppstring.string.as_mut_ptr() as _, neon.as_ptr() as _, neon.len() * 2) ;}
+        empty_il2cppstring
     }
 
     pub fn new_static(string: impl AsRef<str>) -> &'static mut Il2CppString {
@@ -95,7 +108,18 @@ impl Il2CppString {
         if self.len == 0 {
             String::new()
         } else {
-            unsafe { String::from_utf16_lossy(std::slice::from_raw_parts(self.string.as_ptr(), self.len as _)) }
+            let utf16_buf = unsafe { std::slice::from_raw_parts(self.string.as_ptr(), self.len as _) };
+            let utf8_buf = utf16_to_utf8(utf16_buf).unwrap();
+            String::from_utf8_lossy(utf8_buf.as_slice()).to_string()
+        }
+    }
+
+    pub fn to_vec(&self) -> Vec<u8> {
+        if self.len == 0 {
+            Vec::new()
+        }  else {
+            let utf16_buf = unsafe { std::slice::from_raw_parts(self.string.as_ptr(), self.len as _) };
+            utf16_to_utf8(utf16_buf).unwrap()
         }
     }
 
@@ -175,3 +199,89 @@ impl FromStr for &'_ Il2CppString {
 
 #[lazysimd::from_pattern("ff 03 01 d1 fd 7b 02 a9 fd 83 00 91 f4 4f 03 a9 f3 03 00 aa ?? ?? ?? ?? 01 7c 40 92 e8 23 00 91 e0 03 13 aa f4 23 00 91 ?? ?? ?? ?? e8 23 40 39 0b fd 41 d3 e9 0f 40 f9")]
 fn string_new<'a>(c_str: *const u8) -> &'a mut Il2CppString;
+
+fn utf16_to_utf8(input: &[u16]) -> Option<Vec<u8>> {
+    // Check if the string only contains ASCII and accelerate the conversion if so
+    if input.iter().all(|&c| c <= 0x7F) {
+        utf16_to_utf8_ascii_neon(input)
+    } else {
+        Some(String::from_utf16(input).ok()?.into_bytes())
+    }
+}
+
+fn utf16_to_utf8_ascii_neon(input: &[u16]) -> Option<Vec<u8>> {
+    let len = input.iter().position(|&c| c == 0).unwrap_or(input.len());
+    let input = &input[..len];
+
+    let mut out = Vec::with_capacity(len);
+
+    unsafe {
+        out.set_len(len);
+
+        let mut i = 0;
+        let mut dst: *mut u8 = out.as_mut_ptr();
+
+        while i + 8 <= len {
+            let ptr = input.as_ptr().add(i);
+
+            let chunk: uint16x8_t = vld1q_u16(ptr);
+
+            let mask = vcgtq_u16(chunk, vdupq_n_u16(0x7F));
+            if vmaxvq_u16(mask) != 0 {
+                return None;
+            }
+            
+            let narrowed: uint8x8_t = vmovn_u16(chunk);
+            
+            vst1_u8(dst.add(i), narrowed);
+
+            i += 8;
+        }
+        
+        for j in i..len {
+            let c = *input.get_unchecked(j);
+            if c > 0x7F {
+                return None;
+            }
+            *dst.add(j) = c as u8;
+        }
+    }
+
+    Some(out)
+}
+
+fn u8_to_u16_neon(input: &[u8]) -> Vec<u16> {
+    let len = input.len();
+    let mut out = Vec::with_capacity(len);
+
+    unsafe {
+        out.set_len(len);
+
+        let mut i = 0;
+
+        let src = input.as_ptr();
+        let dst: *mut u16 = out.as_mut_ptr();
+        
+        while i + 16 <= len {
+            let p = src.add(i);
+                
+            let a = vld1_u8(p);
+            let b = vld1_u8(p.add(8));
+                
+            let a16 = vmovl_u8(a);
+            let b16 = vmovl_u8(b);
+                
+            vst1q_u16(dst.add(i), a16);
+            vst1q_u16(dst.add(i + 8), b16);
+                
+            i += 16;
+        }
+        
+        while i < len {
+            *dst.add(i) = *src.add(i) as u16;
+            i += 1;
+        }
+    }
+
+    out
+}
