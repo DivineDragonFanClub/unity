@@ -66,7 +66,7 @@ fn system_string_equals(a: &Il2CppString, b: &Il2CppString, method_info: Optiona
 fn system_string_get_hash_code(this: &Il2CppString, method_info: OptionalMethod) -> i32;
 
 #[skyline::from_offset(0x44a168)]
-fn string_new_size(length: i32, method_info: OptionalMethod) -> Option<&'static mut Il2CppString>;
+pub fn string_new_size(length: i32, method_info: OptionalMethod) -> Option<&'static mut Il2CppString>;
 
 impl Il2CppString {
     /// Create a new instance of a SystemString using the provided value.
