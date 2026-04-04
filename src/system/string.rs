@@ -241,7 +241,7 @@ fn utf16_to_utf8_ascii_neon(input: &[u16]) -> Option<Vec<u8>> {
     Some(out)
 }
 
-fn u8_to_u16_neon(input: &[u8]) -> Vec<u16> {
+pub fn u8_to_u16_neon(input: &[u8]) -> Vec<u16> {
     let len = input.len();
     let mut out = Vec::with_capacity(len);
 
