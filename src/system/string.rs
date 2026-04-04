@@ -79,15 +79,8 @@ impl Il2CppString {
     /// let string = Il2CppString::new("A new string");
     /// ```
     pub fn new<'a>(string: impl AsRef<str>) -> &'a Il2CppString {
-        let string_ref = string.as_ref();
-        // Use neon instructions to make the conversion faster
-        let mut neon = u8_to_u16_neon(string_ref.as_bytes());
-        neon.push(0); // Add a null terminator
-        // Allocate a new *empty* string on the Il2Cpp side so we don't have to deal with pointers and who owns them and their lifetime
-        let empty_il2cppstring = unsafe { string_new_size((neon.len() - 1) as _ , None) }.unwrap();
-        // Copy the content of the UTF16 vec to the Il2CppString's destination. Double len because this is in bytes amount and not character amount.
-        unsafe { skyline::libc::memcpy(empty_il2cppstring.string.as_mut_ptr() as _, neon.as_ptr() as _, neon.len() * 2) ;}
-        empty_il2cppstring
+        let cock = std::ffi::CString::new(string.as_ref()).unwrap();
+        unsafe { string_new(cock.as_bytes_with_nul().as_ptr()) }
     }
 
     pub fn new_static(string: impl AsRef<str>) -> &'static mut Il2CppString {
@@ -108,9 +101,7 @@ impl Il2CppString {
         if self.len == 0 {
             String::new()
         } else {
-            let utf16_buf = unsafe { std::slice::from_raw_parts(self.string.as_ptr(), self.len as _) };
-            let utf8_buf = utf16_to_utf8(utf16_buf).unwrap();
-            String::from_utf8_lossy(utf8_buf.as_slice()).to_string()
+            unsafe { String::from_utf16_lossy(std::slice::from_raw_parts(self.string.as_ptr(), self.len as _)) }
         }
     }
 
